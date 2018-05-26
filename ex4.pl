@@ -1,3 +1,7 @@
+:- module('magicSquare', [ magicSquare/2 ]).
+:- use_module('./bee/bApplications/auxs/auxRunExpr',[runExpr/5, decodeIntMatrix/2]).
+:- use_module('./bee/bApplications/auxs/auxMatrix',[matrixCreate/3, matrixTranspose/2, matrix2vector/2]).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Task 1 - kakuroVerify(Instance+, Solution+)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
