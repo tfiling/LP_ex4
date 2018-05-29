@@ -181,9 +181,9 @@ testKakuroVerify.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% test kakuroSolve - not modified from ex3
+% test kakuroSolve
 
-test5(1,
+test2(1,
         [14 = [I11, I12, I13, I14],
         17 = [I3, I4, I5, I6], 
         3 = [I7, I8], 
@@ -210,7 +210,7 @@ test5(1,
 
         1). % are equal
 
-test5(2,
+test2(2,
         [
                 14 = [X1, X2],
                 3 = [X3, X4],
@@ -227,7 +227,7 @@ test5(2,
         1
 ).
 
-test5(3,
+test2(3,
         [
                 6 = [X1, X2],
                 4 = [X3, X4],
@@ -244,7 +244,7 @@ test5(3,
         1
 ).
 
-test5(4,
+test2(4,
         [
                 16 = [X1, X2, X3],
                 9 = [X4, X5, X6],
@@ -269,7 +269,7 @@ test5(4,
 ).
 
 testKakuroSolve :-
-    test5(I, Instance, Sol, AreEqual),
+    test2(I, Instance, Sol, AreEqual),
     (AreEqual is 1 -> 
         (kakuroSolve(Instance, Result), Sol = Result -> writeln(I: ok);writeln(I: failed)) ;
         (kakuroSolve(Instance, Result), Sol \= Result -> writeln(I: failed); writeln(I: ok))
@@ -278,8 +278,86 @@ testKakuroSolve :-
 testKakuroSolve.
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% test schedulingVerify
+
+test3(1,
+        schedule(2, []),        % instance
+        [1, 1],                 % solution
+        1                       % should pass
+).
+
+
+test3(2,
+        schedule(2, []),        % instance
+        [1, 2],                 % solution
+        1                       % should pass
+).
+
+test3(3,
+        schedule(2, [c(1,2)]),  % instance
+        [1, 1],                 % solution
+        0                       % should pass
+).
+
+test3(4,
+        schedule(2, [c(1,2)]),  % instance
+        [1, 2],                 % solution
+        1                       % should pass
+).
+
+test3(5,
+        schedule(3, [c(1, 3), c(1, 2)]),  % instance
+        [1, 1, 2],                 % solution
+        0                       % should pass
+).
+
+test3(6,
+        schedule(3, [c(1, 3), c(1, 2)]),  % instance
+        [1, 3, 2],                 % solution
+        1                      % should pass
+).
+
+
+test3(7,
+        schedule(2, [c(1,2)]),  % instance
+        [1],                 % solution
+        0                       % should pass
+).
+
+test3(8,
+        schedule(2, [c(1,2)]),  % instance
+        [1],                 % solution
+        0                       % should pass
+).
+
+test3(9,
+        schedule(3, [c(1, 3), c(1, 2)]),  % instance
+        [1, 1],                 % solution
+        0                       % should pass
+).
+
+test3(10,
+        schedule(3, [c(1, 3), c(1, 2)]),  % instance
+        [1, 3],                 % solution
+        0                      % should pass
+).
+
+
+testSchedulingVerify :-
+    test3(I, Instance, Sol, ShouldPass),
+    (ShouldPass is 1 -> 
+        (schedulingVerify(Instance, Sol) -> writeln(I: ok);writeln(I: failed)) ;
+        (schedulingVerify(Instance, Sol) -> writeln(I: failed); writeln(I: ok))
+    ),
+    fail.
+testSchedulingVerify.
+
+
 :- 
     writeln('testKakuroVerify'),
     testKakuroVerify,
     writeln('testKakuroSolve'),
-    testKakuroSolve.
+    testKakuroSolve,
+    writeln('testSchedulingVerify'),
+    testSchedulingVerify.

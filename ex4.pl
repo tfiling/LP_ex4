@@ -55,6 +55,7 @@ all_numbers_diff([]).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Task 2 - kakuroEncode(Instance+,Map-,Constraints-)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% please note this implementation is a modification of ex3's kakuro part
 
 kakuroEncode(Instance, map([Instance, VarsMap]),Constraints) :-
     map_solution_variables(Instance, VarsMap, VarsCs),  % map instance and declare BEE variables
@@ -142,3 +143,23 @@ kakuroSolve(Instance,Solution) :-
             ex4:kakuroEncode,
             ex4:kakuroDecode,
             ex4:kakuroVerify).
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Task 5 - schedulingVerify(Instance+, Solution+)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+schedulingVerify(schedule(NExams, Conflicts), Solution) :-
+    length(Solution, NExams),
+    validate_solution_conflicts(Solution, Conflicts).
+
+
+validate_solution_conflicts(_, []).
+validate_solution_conflicts(Solution, [c(I, J) | RestConflicts]) :-
+    nth1(I, Solution, TI),
+    nth1(J, Solution, TJ),
+    TI \== TJ,
+    validate_solution_conflicts(Solution, RestConflicts).
+
