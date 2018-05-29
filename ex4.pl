@@ -56,6 +56,10 @@ all_numbers_diff([]).
 %%% Task 2 - kakuroEncode(Instance+,Map-,Constraints-)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+kakuroEncode(Instance, map([Instance, VarsMap]),Constraints) :-
+    map_solution_variables(Instance, VarsMap, VarsCs),  % map instance and declare BEE variables
+    encodeKakuroConstraints(Instance, VarsMap, CorrectnessCs-[]), % declare the solution correctness constraints
+    append(VarsCs, CorrectnessCs, Constraints).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % map_solution_variables(Instance+, VarsMap-, Cs-)
@@ -80,34 +84,33 @@ accumulateVars([_ = Vars | Rest], AllVars) :-
 accumulateVars([], []).
 
 % taken from the NDK problem example in BEE library with slight modifications
+% declareNums(Vars+, BeeVars+, LowerBound+, UpperBound+ ,Cs-Cs-) - declares BEE variables equivalent to those in the list Vars
+% returns the constraints resulted from the declaration
 declareNums([],[],_,_,Cs-Cs).
 declareNums([Var|Vars],[Var = Num|RestMap],LB,UB,[new_int(Num,LB,UB)|CsH]-CsT):-
     declareNums(Vars,RestMap,LB,UB,CsH-CsT).
 
-kakuroEncode(Instance, map([Instance, VarsMap]),Constraints) :-
-    % map_solution_variables(Instance, VarsMap, Constraints),  % map instance and declare variables
-    map_solution_variables(Instance, VarsMap, VarsCs),  % map instance and declare variables
-    encodeKakuroConstraints(Instance, VarsMap, CorrectnessCs-[]),
-    append(VarsCs, CorrectnessCs, Constraints).
-
-
+% encodeKakuroConstraints(Instance+, Map+, Cs-Tail-) - for each instance component in the form of 
+% Sum = Vars appends with a difference list the constraints for the correctness of the solution
 encodeKakuroConstraints([], _, Tail-Tail).
 encodeKakuroConstraints([Sum = Vars | Rest], Map, Cs-Tail) :-
-    % sum_equals(Sum, BitVectors, Cs-Cs1),                  % CNF1 satisfies when Vars sum into Sum
-    var_list_to_bee_nums(Vars, Nums, Map),
-    Cs = [int_array_sum_eq(Nums, Sum) | Cs1],
-    % all_diff(BitVectors, Cs1-Cs2),                         % CNF2 satisfies when Vars are distinct from each other
-    Cs1 = [int_array_allDiff(Nums) | Cs2],
+    var_list_to_bee_nums(Vars, Nums, Map),                  % fetch the relevant BEE variables
+    Cs = [int_array_sum_eq(Nums, Sum) | Cs1],               % Cs1 satisfies when Vars sum into Sum
+    Cs1 = [int_array_allDiff(Nums) | Cs2],                  % Cs2 satisfies when Vars are distinct from each other
     encodeKakuroConstraints(Rest, Map, Cs2-Tail).
 
+% var_list_to_bee_nums(Vars+, BeeVars-, VarsMap+) - returns a list of BEE variables mapped to the variables in Vars
 var_list_to_bee_nums([], [], _).
 var_list_to_bee_nums([HVars | RestVars], [HNums | RestNums], VarsMap) :-
     var_to_bee_num(HVars, HNums, VarsMap),
     var_list_to_bee_nums(RestVars, RestNums, VarsMap).
 
+% var_to_bee_num(Var+, Num-, VarsMap+) - given the map of variables returns the BEE variable mapped to the given instance's variables
+% case 1 - the next variable in the map is the one that should be returned.
 var_to_bee_num(Var, Num, [H = Num| _]) :-
     Var == H.
 
+% case 2 - the next variable in the map is NOT the one that should be returned, keep looking
 var_to_bee_num(Var, Num, [H = _| RestMap]) :-
     Var \== H,
     var_to_bee_num(Var, Num, RestMap).
@@ -117,13 +120,15 @@ var_to_bee_num(Var, Num, [H = _| RestMap]) :-
 %%% Task 3 - kakuroDecode(Map+,Solution-)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
+% kakuroDecode(Map+,Solution-) iterates over all of the variables in the instance and applied on them the values BEE solver found appropriate
+% the solution is the original instance with the assigned values for its variables
 kakuroDecode(map([Solution, VarsMap]),Solution) :-
     decodeVars(VarsMap).
 
+% decodeVars(VarsMap+) - apply the decode (and assignment) for each variable
 decodeVars([]).
 decodeVars([Var = Num | Rest]) :-
-    decodeInt(Num, Var),
+    decodeInt(Num, Var),    % decodes the possible value for Num and assignes it to Var
     decodeVars(Rest).
 
 
@@ -131,6 +136,7 @@ decodeVars([Var = Num | Rest]) :-
 %%% Task 4 - kakuroSolve(Instance+,Solution-)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
+% kakuroSolve(Instance+,Solution-) - connects all parts together and invokes runExpr
 kakuroSolve(Instance,Solution) :-
     runExpr(Instance,Solution,
             ex4:kakuroEncode,
