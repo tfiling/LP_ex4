@@ -1,5 +1,5 @@
-:- module('magicSquare', [ magicSquare/2 ]).
-:- use_module('./bee/bApplications/auxs/auxRunExpr',[runExpr/5, decodeIntMatrix/2]).
+:- module('ex4', [ kakuroSolve/2 ]).% TODO fix these stuff
+:- use_module('./bee/bApplications/auxs/auxRunExpr',[runExpr/5, decodeIntMatrix/2, decodeInt/2]).
 :- use_module('./bee/bApplications/auxs/auxMatrix',[matrixCreate/3, matrixTranspose/2, matrix2vector/2]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -51,3 +51,88 @@ all_numbers_diff([X1, X2 | Rest]) :-
 all_numbers_diff([_]).
 all_numbers_diff([]).
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Task 2 - kakuroEncode(Instance+,Map-,Constraints-)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% map_solution_variables(Instance+, VarsMap-, Cs-)
+% Map is built in the form of [Instance, VarsMap] and this predicate receives the VarsMap part of the Map
+% VarsMap maps each variable into another variables declared with BEE's new_int with the form InstanceVar = BeeVar
+% when decoding the BEE var we will assign the resulted value for the Instance's Var as well
+% the Var assignemnt will reflect in instance and therefor in the solution
+
+map_solution_variables(Instance, VarsMap, Cs) :-
+    accumulateVars(Instance, Vars),
+    sort(Vars, VarsNoDuplicates),   % handle duplicated appearances of Vars
+    declareNums(VarsNoDuplicates, VarsMap, 1, 9, Cs-[]). % taken from the NDK problem example
+    
+
+
+% accumulateVars(Instance+, AllVars+)
+% appends all variables mentioned in the Instance (may contain duplicates)
+accumulateVars([_ = Vars | Rest], AllVars) :-
+    accumulateVars(Rest, AccumulatedVars),
+    append(Vars, AccumulatedVars, AllVars).
+
+accumulateVars([], []).
+
+% taken from the NDK problem example in BEE library with slight modifications
+declareNums([],[],_,_,Cs-Cs).
+declareNums([Var|Vars],[Var = Num|RestMap],LB,UB,[new_int(Num,LB,UB)|CsH]-CsT):-
+    declareNums(Vars,RestMap,LB,UB,CsH-CsT).
+
+kakuroEncode(Instance, map([Instance, VarsMap]),Constraints) :-
+    % map_solution_variables(Instance, VarsMap, Constraints),  % map instance and declare variables
+    map_solution_variables(Instance, VarsMap, VarsCs),  % map instance and declare variables
+    encodeKakuroConstraints(Instance, VarsMap, CorrectnessCs-[]),
+    append(VarsCs, CorrectnessCs, Constraints).
+
+
+encodeKakuroConstraints([], _, Tail-Tail).
+encodeKakuroConstraints([Sum = Vars | Rest], Map, Cs-Tail) :-
+    % sum_equals(Sum, BitVectors, Cs-Cs1),                  % CNF1 satisfies when Vars sum into Sum
+    var_list_to_bee_nums(Vars, Nums, Map),
+    Cs = [int_array_sum_eq(Nums, Sum) | Cs1],
+    % all_diff(BitVectors, Cs1-Cs2),                         % CNF2 satisfies when Vars are distinct from each other
+    Cs1 = [int_array_allDiff(Nums) | Cs2],
+    encodeKakuroConstraints(Rest, Map, Cs2-Tail).
+
+var_list_to_bee_nums([], [], _).
+var_list_to_bee_nums([HVars | RestVars], [HNums | RestNums], VarsMap) :-
+    var_to_bee_num(HVars, HNums, VarsMap),
+    var_list_to_bee_nums(RestVars, RestNums, VarsMap).
+
+var_to_bee_num(Var, Num, [H = Num| _]) :-
+    Var == H.
+
+var_to_bee_num(Var, Num, [H = _| RestMap]) :-
+    Var \== H,
+    var_to_bee_num(Var, Num, RestMap).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Task 3 - kakuroDecode(Map+,Solution-)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+kakuroDecode(map([Solution, VarsMap]),Solution) :-
+    decodeVars(VarsMap).
+
+decodeVars([]).
+decodeVars([Var = Num | Rest]) :-
+    decodeInt(Num, Var),
+    decodeVars(Rest).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Task 4 - kakuroSolve(Instance+,Solution-)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+kakuroSolve(Instance,Solution) :-
+    runExpr(Instance,Solution,
+            ex4:kakuroEncode,
+            ex4:kakuroDecode,
+            ex4:kakuroVerify).

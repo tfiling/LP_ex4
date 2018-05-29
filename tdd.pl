@@ -280,4 +280,6 @@ testKakuroSolve.
 
 :- 
     writeln('testKakuroVerify'),
-    testKakuroVerify.
+    testKakuroVerify,
+    writeln('testKakuroSolve'),
+    testKakuroSolve.
