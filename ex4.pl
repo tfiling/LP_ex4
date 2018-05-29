@@ -1,6 +1,6 @@
-:- module('ex4', [ kakuroSolve/2 ]).% TODO fix these stuff
-:- use_module('./bee/bApplications/auxs/auxRunExpr',[runExpr/5, decodeIntMatrix/2, decodeInt/2]).
-:- use_module('./bee/bApplications/auxs/auxMatrix',[matrixCreate/3, matrixTranspose/2, matrix2vector/2]).
+:- module('ex4', [ kakuroSolve/2, schedulingSolve/2]).
+:- use_module('./bee/bApplications/auxs/auxRunExpr',[runExpr/5, decodeInt/2]).
+:- use_module('./bee/bApplications/auxs/auxMatrix',[matrixCreate/3, matrixGetCell/4, matrixGetRow/3]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Task 1 - kakuroVerify(Instance+, Solution+)
@@ -163,3 +163,105 @@ validate_solution_conflicts(Solution, [c(I, J) | RestConflicts]) :-
     TI \== TJ,
     validate_solution_conflicts(Solution, RestConflicts).
 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Task 6 - schedulingEncode(Instance+,Map+,Constraints-)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+schedulingEncode(schedule(NExams, Conflicts), Map, Constraints) :-
+    matrixCreate(NExams, NExams, Matrix),
+    Map = map(Matrix),
+    apply_zero_diagonal_constraints(Matrix, 1, NExams, Constraints-Cs2),
+    apply_symmetry_constraints(Matrix, NExams, Cs2-Cs3),
+    apply_conflict_constraints(Matrix, Conflicts, Cs3-Cs4),
+    apply_clique_only_edges_constraints(Matrix, NExams, 1, Cs4-[]).
+
+
+apply_zero_diagonal_constraints(_, CurrentIndex, N, Tail-Tail) :-
+    CurrentIndex > N.
+
+apply_zero_diagonal_constraints(Matrix, CurrentIndex, N, [ bool_eq(XII, -1) | RestConstraints ]-Tail) :-
+    CurrentIndex =< N,
+    matrixGetCell(Matrix, CurrentIndex, CurrentIndex, XII),
+    I1 is CurrentIndex + 1,
+    apply_zero_diagonal_constraints(Matrix, I1, N, RestConstraints-Tail).
+
+apply_symmetry_constraints(Matrix, NExams, Constraints-Tail) :-
+    findall((I, J), (between(1, NExams, I), I1 is I+1, between(I1, NExams, J)), AllIndexPairs),
+    apply_symmetry_constraints(Matrix, NExams, AllIndexPairs, Constraints-Tail).
+
+
+apply_symmetry_constraints(_, _, [], Tail-Tail).
+apply_symmetry_constraints(Matrix, _, [(I, J) | RestIndexPairs], [ bool_eq(XIJ, XJI) | RestConstraints]-Tail) :-
+    matrixGetCell(Matrix, I, J, XIJ),
+    matrixGetCell(Matrix, J, I, XJI),
+    apply_symmetry_constraints(Matrix, _, RestIndexPairs, RestConstraints-Tail).
+
+
+apply_conflict_constraints(_, [], Tail-Tail).
+apply_conflict_constraints(Matrix, [c(I, J) | RestConflicts], [ bool_or_reif(XIJ, XJI, -1) | RestConstraints]-Tail) :-
+    matrixGetCell(Matrix, I, J, XIJ),
+    matrixGetCell(Matrix, J, I, XJI),
+    apply_conflict_constraints(Matrix, RestConflicts, RestConstraints-Tail).
+
+
+apply_clique_only_edges_constraints(_, NExams, CurrentRowIndex, Tail-Tail) :-
+    CurrentRowIndex > NExams.
+
+apply_clique_only_edges_constraints(Matrix, NExams, CurrentRowIndex, Constraints-Tail) :-
+    CurrentRowIndex =< NExams,
+    matrixGetRow(Matrix,CurrentRowIndex, Row),
+    findall((I, J), (between(1, NExams, I), I1 is I+1, between(I1, NExams, J)), Pairs),
+    row_apply_clique_only_edges_constraints(Pairs, Row, Matrix, Constraints-Cs2),
+    NextRowIndex is CurrentRowIndex + 1,
+    apply_clique_only_edges_constraints(Matrix, NExams, NextRowIndex, Cs2-Tail).
+
+
+row_apply_clique_only_edges_constraints([], _, _, Tail-Tail).
+row_apply_clique_only_edges_constraints([(I, J) | RestPairs], Row, Matrix, [bool_array_or([-X, -Y, Z]) | RestRowConstraints]-Tail) :-
+    nth1(I, Row, X),
+    nth1(J, Row, Y),
+    matrixGetCell(Matrix, I, J, Z),
+    row_apply_clique_only_edges_constraints(RestPairs, Row, Matrix, RestRowConstraints-Tail).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Task 7 - schedulingDecode(Map+,Solution-)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+schedulingDecode(map(Matrix),Solution) :-
+    length(Matrix, NExams),
+    length(Solution, NExams),
+    numlist(1, NExams, AllIndexes),
+    extract_distribution(Matrix, AllIndexes, ExamDistribution),
+    populate_solution(ExamDistribution, 1, Solution).
+
+
+extract_solution(Matrix, [CurrentIndex | RestIndexes], [ [CurrentIndex | AdjacentExams] | RestExamDistribution]) :-
+    extract_adjacent_exams(Matrix, CurrentIndex, AdjacentExams),
+    delete(RestIndexes, AdjacentExams, RemainingIndexes),
+    extract_solution(Matrix, RemainingIndexes, RestExamDistribution).
+
+populate_solution([], _, _).
+populate_solution([DayDistribution | RestDistribution], CurrentDayPopulated, Solution) :-
+    populate_day(DayDistribution, CurrentDayPopulated, Solution),
+    NextDay is CurrentDayPopulated + 1,
+    populate_solution(RestDistribution, NextDay, Solution).
+
+populate_day([], _, _).
+populate_day([ExamIndex | RestExams], CurrentDayPopulated, Solution) :-
+    nth1(ExamIndex, Solution, CurrentDayPopulated),
+    populate_day(RestExams, CurrentDayPopulated, Solution).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Task 8 - schedulingSolve(Instance+,Solution-)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+schedulingSolve(Instance,Solution) :-
+    runExpr(Instance,Solution,
+        ex4:schedulingEncode,
+        ex4:schedulingDecode,
+        ex4:schedulingVerify).
