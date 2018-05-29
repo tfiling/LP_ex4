@@ -240,8 +240,8 @@ schedulingDecode(map(Matrix),Solution) :-
     length(Matrix, NExams),
     length(Solution, NExams),
     numlist(1, NExams, AllIndexes),
-    extract_distribution(Matrix, AllIndexes, ExamDistribution),
-    populate_solution(ExamDistribution, 1, Solution).
+    extract_distribution(Matrix, AllIndexes, Solution).
+    % populate_solution(ExamDistribution, 1, Solution).
 
 
 extract_distribution(_, [], []).
@@ -267,10 +267,10 @@ populate_solution([DayDistribution | RestDistribution], CurrentDayPopulated, Sol
     NextDay is CurrentDayPopulated + 1,
     populate_solution(RestDistribution, NextDay, Solution).
 
-populate_day([], _, _).
-populate_day([ExamIndex | RestExams], CurrentDayPopulated, Solution) :-
-    nth1(ExamIndex, Solution, CurrentDayPopulated),
-    populate_day(RestExams, CurrentDayPopulated, Solution).
+% populate_day([], _, _).
+% populate_day([ExamIndex | RestExams], [CurrentDayPopulated | Res, Solution) :-
+%     nth1(ExamIndex, Solution, CurrentDayPopulated),
+%     populate_day(RestExams, CurrentDayPopulated, Solution).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
