@@ -171,12 +171,18 @@ validate_solution_conflicts(Solution, [c(I, J) | RestConflicts]) :-
 
 schedulingEncode(schedule(NExams, Conflicts), Map, Constraints) :-
     matrixCreate(NExams, NExams, Matrix),
+    set_matrix_contents(Matrix, Constraints-Cs2),
     Map = map(Matrix),
-    apply_zero_diagonal_constraints(Matrix, 1, NExams, Constraints-Cs2),
-    apply_symmetry_constraints(Matrix, NExams, Cs2-Cs3),
-    apply_conflict_constraints(Matrix, Conflicts, Cs3-Cs4),
-    apply_clique_only_edges_constraints(Matrix, NExams, 1, Cs4-[]).
+    apply_zero_diagonal_constraints(Matrix, 1, NExams, Cs2-Cs3),
+    apply_symmetry_constraints(Matrix, NExams, Cs3-Cs4),
+    apply_conflict_constraints(Matrix, Conflicts, Cs4-Cs5),
+    apply_clique_only_edges_constraints(Matrix, NExams, 1, Cs5-[]).
 
+set_matrix_contents([], Tail-Tail).
+set_matrix_contents([[] | RestRows], Cs-Tail) :-
+    set_matrix_contents(RestRows, Cs-Tail).
+set_matrix_contents([[H | T] | RestRows], [new_bool(H) | Cs] - Tail) :-
+    set_matrix_contents([T | RestRows], Cs-Tail).
 
 apply_zero_diagonal_constraints(_, CurrentIndex, N, Tail-Tail) :-
     CurrentIndex > N.
@@ -238,10 +244,22 @@ schedulingDecode(map(Matrix),Solution) :-
     populate_solution(ExamDistribution, 1, Solution).
 
 
-extract_solution(Matrix, [CurrentIndex | RestIndexes], [ [CurrentIndex | AdjacentExams] | RestExamDistribution]) :-
-    extract_adjacent_exams(Matrix, CurrentIndex, AdjacentExams),
-    delete(RestIndexes, AdjacentExams, RemainingIndexes),
-    extract_solution(Matrix, RemainingIndexes, RestExamDistribution).
+extract_distribution(_, [], []).
+extract_distribution(Matrix, [CurrentIndex | RestIndexes], [ [CurrentIndex | AdjacentExamsIndexes] | RestExamDistribution]) :-
+    matrixGetRow(Matrix, CurrentIndex, Row),
+    extract_adjacent_exams(Matrix, Row, AdjacentExamsIndexes),
+    delete(RestIndexes, AdjacentExamsIndexes, RemainingIndexes),
+    extract_distribution(Matrix, RemainingIndexes, RestExamDistribution).
+
+extract_adjacent_exams(_, Row, []) :-
+    \+member(1, Row).
+extract_adjacent_exams(Matrix, Row, [ExamIndex | RestAdjacentExamsIndexes]) :-
+    nth1(ExamIndex, Row, 1),
+    select(1, Row, -1, NewRow),
+    extract_adjacent_exams(Matrix, NewRow, RestAdjacentExamsIndexes).
+
+
+
 
 populate_solution([], _, _).
 populate_solution([DayDistribution | RestDistribution], CurrentDayPopulated, Solution) :-
