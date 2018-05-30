@@ -1,5 +1,5 @@
 :- module('ex4', [ kakuroSolve/2, schedulingSolve/2]).
-:- use_module('./bee/bApplications/auxs/auxRunExpr',[runExpr/5, decodeInt/2]).
+:- use_module('./bee/bApplications/auxs/auxRunExpr',[runExpr/5, runExprMax/5, decodeInt/2]).
 :- use_module('./bee/bApplications/auxs/auxMatrix',[matrixCreate/3, matrixGetCell/4, matrixGetRow/3]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -169,12 +169,13 @@ validate_solution_conflicts(Solution, [c(I, J) | RestConflicts]) :-
 %%% Task 6 - schedulingEncode(Instance+,Map+,Constraints-)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-schedulingEncode(schedule(NExams, Conflicts), Map, Constraints) :-
+schedulingEncode(schedule(NExams, Conflicts), Map, M, [new_int(M, 1, NExams), bool_array_sum_eq(Vector, M) | Constraints]) :-
     matrixCreate(NExams, NExams, Matrix),
     set_matrix_contents(Matrix, Constraints-Cs2),
+    append(Matrix, Vector),
     Map = map(Matrix),
     apply_zero_diagonal_constraints(Matrix, 1, NExams, Cs2-Cs3),
-    apply_symmetry_constraints(Matrix, NExams, Cs3-Cs4),
+    apply_symmetry_constraints(Matrix, NExams, Cs3-Cs4),% TODO consider using matrix transpose somehow
     apply_conflict_constraints(Matrix, Conflicts, Cs4-Cs5),
     apply_clique_only_edges_constraints(Matrix, NExams, 1, Cs5-[]).
 
@@ -240,15 +241,15 @@ schedulingDecode(map(Matrix),Solution) :-
     length(Matrix, NExams),
     length(Solution, NExams),
     numlist(1, NExams, AllIndexes),
-    extract_distribution(Matrix, AllIndexes, Solution).
-    % populate_solution(ExamDistribution, 1, Solution).
+    extract_distribution(Matrix, AllIndexes, ExamDistribution),
+    populate_solution(ExamDistribution, 1, Solution).
 
 
 extract_distribution(_, [], []).
 extract_distribution(Matrix, [CurrentIndex | RestIndexes], [ [CurrentIndex | AdjacentExamsIndexes] | RestExamDistribution]) :-
     matrixGetRow(Matrix, CurrentIndex, Row),
     extract_adjacent_exams(Matrix, Row, AdjacentExamsIndexes),
-    delete(RestIndexes, AdjacentExamsIndexes, RemainingIndexes),
+    delete_all(RestIndexes, AdjacentExamsIndexes, RemainingIndexes),
     extract_distribution(Matrix, RemainingIndexes, RestExamDistribution).
 
 extract_adjacent_exams(_, Row, []) :-
@@ -259,7 +260,10 @@ extract_adjacent_exams(Matrix, Row, [ExamIndex | RestAdjacentExamsIndexes]) :-
     extract_adjacent_exams(Matrix, NewRow, RestAdjacentExamsIndexes).
 
 
-
+delete_all(RemainingList, [], RemainingList).
+delete_all(List, [H | T], RemainingList) :-
+    delete(List, H, CurrentRemainingList),
+    delete_all(CurrentRemainingList, T, RemainingList).
 
 populate_solution([], _, _).
 populate_solution([DayDistribution | RestDistribution], CurrentDayPopulated, Solution) :-
@@ -267,10 +271,10 @@ populate_solution([DayDistribution | RestDistribution], CurrentDayPopulated, Sol
     NextDay is CurrentDayPopulated + 1,
     populate_solution(RestDistribution, NextDay, Solution).
 
-% populate_day([], _, _).
-% populate_day([ExamIndex | RestExams], [CurrentDayPopulated | Res, Solution) :-
-%     nth1(ExamIndex, Solution, CurrentDayPopulated),
-%     populate_day(RestExams, CurrentDayPopulated, Solution).
+populate_day([], _, _).
+populate_day([ExamIndex | RestExams], CurrentDayPopulated, Solution) :-
+    nth1(ExamIndex, Solution, CurrentDayPopulated),
+    populate_day(RestExams, CurrentDayPopulated, Solution).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -279,7 +283,7 @@ populate_solution([DayDistribution | RestDistribution], CurrentDayPopulated, Sol
 
 
 schedulingSolve(Instance,Solution) :-
-    runExpr(Instance,Solution,
+    runExprMax(Instance,Solution,
         ex4:schedulingEncode,
         ex4:schedulingDecode,
         ex4:schedulingVerify).
