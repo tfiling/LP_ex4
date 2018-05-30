@@ -1,6 +1,6 @@
 :- module('ex4', [ kakuroSolve/2, schedulingSolve/2]).
 :- use_module('./bee/bApplications/auxs/auxRunExpr',[runExpr/5, runExprMax/5, decodeInt/2]).
-:- use_module('./bee/bApplications/auxs/auxMatrix',[matrixCreate/3, matrixGetCell/4, matrixGetRow/3]).
+:- use_module('./bee/bApplications/auxs/auxMatrix',[matrixCreate/3, matrixGetCell/4, matrixGetRow/3, matrixTranspose/2]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Task 1 - kakuroVerify(Instance+, Solution+)
@@ -171,13 +171,13 @@ validate_solution_conflicts(Solution, [c(I, J) | RestConflicts]) :-
 
 schedulingEncode(schedule(NExams, Conflicts), Map, M, [new_int(M, 1, NExams), bool_array_sum_eq(Vector, M) | Constraints]) :-
     matrixCreate(NExams, NExams, Matrix),
+    matrixTranspose(Matrix, Matrix),
     set_matrix_contents(Matrix, Constraints-Cs2),
     append(Matrix, Vector),
     Map = map(Matrix),
     apply_zero_diagonal_constraints(Matrix, 1, NExams, Cs2-Cs3),
-    apply_symmetry_constraints(Matrix, NExams, Cs3-Cs4),% TODO consider using matrix transpose somehow
-    apply_conflict_constraints(Matrix, Conflicts, Cs4-Cs5),
-    apply_clique_only_edges_constraints(Matrix, NExams, 1, Cs5-[]).
+    apply_conflict_constraints(Matrix, Conflicts, Cs3-Cs4),
+    apply_clique_only_edges_constraints(Matrix, NExams, 1, Cs4-[]).
 
 set_matrix_contents([], Tail-Tail).
 set_matrix_contents([[] | RestRows], Cs-Tail) :-
