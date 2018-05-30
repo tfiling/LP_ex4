@@ -175,9 +175,9 @@ schedulingEncode(schedule(NExams, Conflicts), Map, M, [new_int(M, 1, NExams), bo
     set_matrix_contents(Matrix, Constraints-Cs2),
     append(Matrix, Vector),
     Map = map(Matrix),
-    apply_zero_diagonal_constraints(Matrix, 1, NExams, Cs2-Cs3),
-    apply_conflict_constraints(Matrix, Conflicts, Cs3-Cs4),
-    apply_clique_only_edges_constraints(Matrix, NExams, 1, Cs4-[]).
+    apply_zero_diagonal_constraints(Matrix, 1, NExams),
+    apply_conflict_constraints(Matrix, Conflicts, Cs2-Cs3),
+    apply_clique_only_edges_constraints(Matrix, NExams, 1, Cs3-[]).
 
 set_matrix_contents([], Tail-Tail).
 set_matrix_contents([[] | RestRows], Cs-Tail) :-
@@ -185,14 +185,14 @@ set_matrix_contents([[] | RestRows], Cs-Tail) :-
 set_matrix_contents([[H | T] | RestRows], [new_bool(H) | Cs] - Tail) :-
     set_matrix_contents([T | RestRows], Cs-Tail).
 
-apply_zero_diagonal_constraints(_, CurrentIndex, N, Tail-Tail) :-
+apply_zero_diagonal_constraints(_, CurrentIndex, N) :-
     CurrentIndex > N.
 
-apply_zero_diagonal_constraints(Matrix, CurrentIndex, N, [ bool_eq(XII, -1) | RestConstraints ]-Tail) :-
+apply_zero_diagonal_constraints(Matrix, CurrentIndex, N) :-
     CurrentIndex =< N,
-    matrixGetCell(Matrix, CurrentIndex, CurrentIndex, XII),
+    matrixGetCell(Matrix, CurrentIndex, CurrentIndex, -1),
     I1 is CurrentIndex + 1,
-    apply_zero_diagonal_constraints(Matrix, I1, N, RestConstraints-Tail).
+    apply_zero_diagonal_constraints(Matrix, I1, N).
 
 apply_symmetry_constraints(Matrix, NExams, Constraints-Tail) :-
     findall((I, J), (between(1, NExams, I), I1 is I+1, between(I1, NExams, J)), AllIndexPairs),
