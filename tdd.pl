@@ -354,10 +354,27 @@ testSchedulingVerify :-
 testSchedulingVerify.
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% test schedulingSolve
+
+% testschedulingSolve :-
+%     test3(I, Instance, Sol, ShouldPass),
+%     (ShouldPass is 1 -> 
+%         (schedulingVerify(Instance, Sol) -> writeln(I: ok);writeln(I: failed)) ;
+%         (schedulingVerify(Instance, Sol) -> writeln(I: failed); writeln(I: ok))
+%     ),
+%     fail.
+% testschedulingSolve.
+
+% schedulingSolve(schedule(5, [c(1, 2), c(2, 3)]), Sol)
+
+
 :- 
-    writeln('testKakuroVerify'),
-    testKakuroVerify,
-    writeln('testKakuroSolve'),
-    testKakuroSolve,
-    writeln('testSchedulingVerify'),
-    testSchedulingVerify.
+%     writeln('testKakuroVerify'),
+%     testKakuroVerify,
+%     writeln('testKakuroSolve'),
+%     testKakuroSolve,
+%     writeln('testSchedulingVerify'),
+%     testSchedulingVerify.
+        consult('instances/sched-hec-s-92'),
+        schedule(NExams,Constraints), schedulingSolve(schedule(NExams,Constraints), Sol).
