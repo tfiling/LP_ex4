@@ -173,7 +173,7 @@ schedulingEncode(schedule(NExams, Conflicts), Map, M, [new_int(M, 1, MaxM), MaxM
     calc_MaxM(NExams, MaxM),
     matrixCreate(NExams, NExams, Matrix),
     set_MaxM_constraint(Matrix, M, MaxMConstraint),
-    writeln(MaxMConstraint),
+    % writeln(MaxMConstraint),
     matrixTranspose(Matrix, Matrix),
     set_matrix_contents(Matrix, Constraints-Cs2),
     Map = map(Matrix),
