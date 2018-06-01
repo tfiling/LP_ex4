@@ -1,5 +1,5 @@
 :- module('ex4', [ kakuroSolve/2, schedulingSolve/2]).
-:- use_module('./bee/bApplications/auxs/auxRunExpr',[runExpr/5, runExprMax/5, decodeInt/2]).
+:- use_module('./bee/bApplications/auxs/auxRunExpr',[runExpr/5, runExprMax/5, runExprMin/5, decodeInt/2, decodeIntArray/2]).
 :- use_module('./bee/bApplications/auxs/auxMatrix',[matrixCreate/3, matrixGetCell/4, matrixGetRow/3, matrixTranspose/2]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -169,7 +169,7 @@ validate_solution_conflicts(Solution, [c(I, J) | RestConflicts]) :-
 %%% Task 6 - schedulingEncode(Instance+,Map+,Constraints-)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  
-schedulingEncode(schedule(NExams, Conflicts), Map, M, [new_int(M, 1, NExams) | Constraints]) :-
+schedulingEncode(schedule(NExams, Conflicts), map(ExamsSchedule), M, [new_int(M, 1, NExams) | Constraints]) :-
     length(ExamsSchedule, NExams),
     populateExams(ExamsSchedule, 1, Constraints-Cs2),
     apply_conflict_constraints(ExamsSchedule, Conflicts, Cs2-Cs3),
@@ -187,9 +187,9 @@ apply_conflict_constraints(ExamsSchedule, [c(I, J) | RestConflicts], [ int_neq(X
     nth1(J, ExamsSchedule, XJ),
     apply_conflict_constraints(ExamsSchedule, RestConflicts, RestConstraints-Tail).
 
-apply_M_constraints([], _, Tail-Tail)
-apply_M_constraints([Xi | RestExams], M, [int_leq(Xi, M) | RestConstraints]-Cs4) :-
-    apply_M_constraints(RestExams, M, RestConstraints-Cs4).
+apply_M_constraints([], _, Tail-Tail).
+apply_M_constraints([Xi | RestExams], M, [int_leq(Xi, M) | RestConstraints]-Tail) :-
+    apply_M_constraints(RestExams, M, RestConstraints-Tail).
 
 %%%%%%%%%%%%%%%%%% LEGACY %%%%%%%%%%%%%%%%%%%%%%%%%%
 % schedulingEncode(schedule(NExams, Conflicts), Map, M, [new_int(M, 1, MaxM), MaxMConstraint | Constraints]) :-
@@ -286,6 +286,8 @@ apply_M_constraints([Xi | RestExams], M, [int_leq(Xi, M) | RestConstraints]-Cs4)
 %%% Task 7 - schedulingDecode(Map+,Solution-)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+schedulingDecode(map(ExamsSchedule),Solution) :-
+    decodeIntArray(ExamsSchedule, Solution).
 
 %%%%%%%%%%%%%%%%%% LEGACY %%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -335,7 +337,7 @@ apply_M_constraints([Xi | RestExams], M, [int_leq(Xi, M) | RestConstraints]-Cs4)
 
 
 schedulingSolve(Instance,Solution) :-
-    runExprMax(Instance,Solution,
+    runExprMin(Instance,Solution,
         ex4:schedulingEncode,
         ex4:schedulingDecode,
         ex4:schedulingVerify).
