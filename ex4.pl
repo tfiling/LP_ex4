@@ -169,15 +169,41 @@ validate_solution_conflicts(Solution, [c(I, J) | RestConflicts]) :-
 %%% Task 6 - schedulingEncode(Instance+,Map+,Constraints-)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-schedulingEncode(schedule(NExams, Conflicts), Map, M, [new_int(M, 1, NExams), bool_array_sum_eq(Vector, M) | Constraints]) :-
+schedulingEncode(schedule(NExams, Conflicts), Map, M, [new_int(M, 1, MaxM), MaxMConstraint | Constraints]) :-
+    calc_MaxM(NExams, MaxM),
     matrixCreate(NExams, NExams, Matrix),
+    set_MaxM_constraint(Matrix, M, MaxMConstraint),
+    writeln(MaxMConstraint),
     matrixTranspose(Matrix, Matrix),
     set_matrix_contents(Matrix, Constraints-Cs2),
-    append(Matrix, Vector),
     Map = map(Matrix),
     apply_zero_diagonal_constraints(Matrix, 1, NExams),
     apply_conflict_constraints(Matrix, Conflicts, Cs2-Cs3),
     apply_clique_only_edges_constraints(Matrix, NExams, 1, Cs3-[]).
+
+% MaxM = (NExams^2 - NExams) / 2
+calc_MaxM(NExams, MaxM) :-
+    NExams2 is NExams * NExams,
+    NExams2_SubNExams is NExams2 - NExams,
+    MaxM is NExams2_SubNExams / 2.
+
+set_MaxM_constraint(Matrix, M, bool_array_sum_eq(Vector, M)) :-
+    extract_top_right_side(Matrix, 1, PartialMatrixVector),
+    append(PartialMatrixVector, Vector).
+
+
+extract_top_right_side(Matrix, CurrentRowIndex, []) :-
+    length(Matrix, Len),
+    CurrentRowIndex > Len.
+
+extract_top_right_side(Matrix, CurrentRowIndex, [CurrentExtracted | RestExtracted]) :-
+    length(Matrix, Len),
+    CurrentRowIndex =< Len,
+    matrixGetRow(Matrix, CurrentRowIndex, Row),
+    CurrentRowIndex1 is CurrentRowIndex + 1,
+    length(Head, CurrentRowIndex),
+    append(Head, CurrentExtracted, Row),
+    extract_top_right_side(Matrix, CurrentRowIndex1, RestExtracted).
 
 set_matrix_contents([], Tail-Tail).
 set_matrix_contents([[] | RestRows], Cs-Tail) :-
