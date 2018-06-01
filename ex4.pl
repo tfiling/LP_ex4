@@ -168,7 +168,7 @@ validate_solution_conflicts(Solution, [c(I, J) | RestConflicts]) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Task 6 - schedulingEncode(Instance+,Map+,Constraints-)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+ 
 schedulingEncode(schedule(NExams, Conflicts), Map, M, [new_int(M, 1, MaxM), MaxMConstraint | Constraints]) :-
     calc_MaxM(NExams, MaxM),
     matrixCreate(NExams, NExams, Matrix),
