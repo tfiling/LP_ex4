@@ -172,9 +172,9 @@ validate_solution_conflicts(Solution, [c(I, J) | RestConflicts]) :-
 schedulingEncode(schedule(NExams, Conflicts), map(ExamDays), M, [new_int(M, 1, NExams) | Constraints]) :-
     createAsymmetricMatrix(1, NExams, Matrix),
     set_matrix_contents(Matrix, Constraints-Cs2),
-    apply_conflict_constraints(Matrix, Conflicts, Cs2-Cs3),
-    apply_single_day_constraints(Matrix, Cs3-Cs4),
-    apply_M_binding_constraints(Matrix, M, 1, ExamDays, Cs4-[]).
+    apply_M_binding_constraints(Matrix, M, 1, ExamDays, Cs2-Cs3),
+    apply_conflict_constraints(ExamDays, Conflicts, Cs3-Cs4),
+    apply_single_day_constraints(Matrix, Cs4-[]).
 
 
 createAsymmetricMatrix(NExams1, NExams, []) :-
@@ -195,10 +195,10 @@ set_matrix_contents([[H | T] | RestRows], [new_bool(H) | Cs] - Tail) :-
 apply_conflict_constraints(_, [], Tail-Tail).
 % one of the constraints forces a single true value 
 % instead of comparing each of the row cells we simply require the whole arrays to be different
-apply_conflict_constraints(Matrix, [c(I, J) | RestConflicts], [ bool_arrays_neq(XI, XJ) | RestConstraints]-Tail) :-
-    matrixGetRow(Matrix, I, XI),
-    matrixGetRow(Matrix, J, XJ),
-    apply_conflict_constraints(Matrix, RestConflicts, RestConstraints-Tail).
+apply_conflict_constraints(ExamDays, [c(I, J) | RestConflicts], [ direct_neq(XI, XJ) | RestConstraints]-Tail) :-
+    nth1(I, ExamDays, XI),
+    nth1(J, ExamDays, XJ),
+    apply_conflict_constraints(ExamDays, RestConflicts, RestConstraints-Tail).
 
 
 apply_single_day_constraints([], Tail-Tail).
