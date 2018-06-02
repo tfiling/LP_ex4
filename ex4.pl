@@ -173,8 +173,8 @@ schedulingEncode(schedule(NExams, Conflicts), map(ExamDays), M, [new_int(M, 1, N
     createAsymmetricMatrix(1, NExams, Matrix),
     set_matrix_contents(Matrix, Constraints-Cs2),
     apply_M_binding_constraints(Matrix, M, 1, ExamDays, Cs2-Cs3),
-    apply_conflict_constraints(ExamDays, Conflicts, Cs3-Cs4),
-    apply_single_day_constraints(Matrix, Cs4-[]).
+    apply_conflict_constraints(ExamDays, Conflicts, Cs3-[]).
+    % apply_single_day_constraints(Matrix, Cs4-[]).
 
 
 createAsymmetricMatrix(NExams1, NExams, []) :-
