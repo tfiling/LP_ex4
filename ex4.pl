@@ -174,7 +174,7 @@ schedulingEncode(schedule(NExams, Conflicts), map(ExamDays), M, [new_int(M, 1, N
     set_matrix_contents(Matrix, Constraints-Cs2),
     apply_conflict_constraints(Matrix, Conflicts, Cs2-Cs3),
     apply_single_day_constraints(Matrix, Cs3-Cs4),
-    apply_M_binding_constraints(Matrix, M, ExamDays, Cs4-[]).
+    apply_M_binding_constraints(Matrix, M, NExams, ExamDays, Cs4-[]).
 
 set_matrix_contents([], Tail-Tail).
 set_matrix_contents([[] | RestRows], Cs-Tail) :-
@@ -196,9 +196,9 @@ apply_single_day_constraints([HeadRow | RestMatrixRows], [bool_array_sum_eq(Head
     apply_single_day_constraints(RestMatrixRows, RestConstraints-Tail).
 
 
-apply_M_binding_constraints([], _, [], Tail-Tail).
-apply_M_binding_constraints([XI | RestExams], M, [ YI | RestExamDays], [ new_int(YI, 1, 10) | [int_leq(YI, M) | [int_direct2bool_array(YI, XI, 1) | RestConstraints]]]-Tail) :-
-    apply_M_binding_constraints(RestExams, M, RestExamDays, RestConstraints-Tail).
+apply_M_binding_constraints([], _, _, [], Tail-Tail).
+apply_M_binding_constraints([XI | RestExams], M, NExams, [ YI | RestExamDays], [ new_int(YI, 1, NExams) | [int_leq(YI, M) | [int_direct2bool_array(YI, XI, 1) | RestConstraints]]]-Tail) :-
+    apply_M_binding_constraints(RestExams, M, NExams, RestExamDays, RestConstraints-Tail).
 
 
 %%%%%%%%%%%%%%%%%% LEGACY %%%%%%%%%%%%%%%%%%%%%%%%%%

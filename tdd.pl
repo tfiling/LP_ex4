@@ -401,7 +401,7 @@ measure(FileName) :-
         measure('instances/sched-rye-s-93'),% out of global stack
         measure('instances/sched-car-f-92'),% out of global stack
         measure('instances/sched-uta-s-92'),% out of global stack
-        measure('instances/sched-car-s-91').% out of global stack
+        measure('instances/sched-car-s-91'),% out of global stack
         true.
 
         % schedule(NExams,Constraints), 
