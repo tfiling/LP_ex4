@@ -170,11 +170,21 @@ validate_solution_conflicts(Solution, [c(I, J) | RestConflicts]) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  
 schedulingEncode(schedule(NExams, Conflicts), map(ExamDays), M, [new_int(M, 1, NExams) | Constraints]) :-
-    matrixCreate(NExams, NExams, Matrix),
+    createAsymmetricMatrix(1, NExams, Matrix),
     set_matrix_contents(Matrix, Constraints-Cs2),
     apply_conflict_constraints(Matrix, Conflicts, Cs2-Cs3),
     apply_single_day_constraints(Matrix, Cs3-Cs4),
     apply_M_binding_constraints(Matrix, M, 1, ExamDays, Cs4-[]).
+
+
+createAsymmetricMatrix(NExams1, NExams, []) :-
+    NExams1 is NExams + 1.
+createAsymmetricMatrix(CurrentExpectedLength, NExams, [CurrentRow | RestRows]) :-
+    CurrentExpectedLength =< NExams,
+    length(CurrentRow, CurrentExpectedLength),
+    NextExpectedLength is CurrentExpectedLength + 1,
+    createAsymmetricMatrix(NextExpectedLength, NExams, RestRows).
+
 
 set_matrix_contents([], Tail-Tail).
 set_matrix_contents([[] | RestRows], Cs-Tail) :-
