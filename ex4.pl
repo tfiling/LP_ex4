@@ -169,27 +169,59 @@ validate_solution_conflicts(Solution, [c(I, J) | RestConflicts]) :-
 %%% Task 6 - schedulingEncode(Instance+,Map+,Constraints-)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  
-schedulingEncode(schedule(NExams, Conflicts), map(ExamsSchedule), M, [new_int(M, 1, NExams) | Constraints]) :-
-    length(ExamsSchedule, NExams),
-    populateExams(ExamsSchedule, 1, Constraints-Cs2),
-    apply_conflict_constraints(ExamsSchedule, Conflicts, Cs2-Cs3),
-    apply_M_constraints(ExamsSchedule, M, Cs3-[]).
+schedulingEncode(schedule(NExams, Conflicts), map(ExamDays), M, [new_int(M, 1, NExams) | Constraints]) :-
+    matrixCreate(NExams, NExams, Matrix),
+    set_matrix_contents(Matrix, Constraints-Cs2),
+    apply_conflict_constraints(Matrix, Conflicts, Cs2-Cs3),
+    apply_single_day_constraints(Matrix, Cs3-Cs4),
+    apply_M_binding_constraints(Matrix, M, ExamDays, Cs4-[]).
 
-populateExams([], _, Tail-Tail).
-populateExams([Xi | RestExams], CurrentPossibleMax, [new_int(Xi, 1, CurrentPossibleMax) | RestConstraints]-Tail) :-
-    NextPossibleMax is CurrentPossibleMax + 1,
-    populateExams(RestExams, NextPossibleMax, RestConstraints-Tail).
-
+set_matrix_contents([], Tail-Tail).
+set_matrix_contents([[] | RestRows], Cs-Tail) :-
+    set_matrix_contents(RestRows, Cs-Tail).
+set_matrix_contents([[H | T] | RestRows], [new_bool(H) | Cs] - Tail) :-
+    set_matrix_contents([T | RestRows], Cs-Tail).
 
 apply_conflict_constraints(_, [], Tail-Tail).
-apply_conflict_constraints(ExamsSchedule, [c(I, J) | RestConflicts], [ int_neq(XI, XJ) | RestConstraints]-Tail) :-
-    nth1(I, ExamsSchedule, XI),
-    nth1(J, ExamsSchedule, XJ),
-    apply_conflict_constraints(ExamsSchedule, RestConflicts, RestConstraints-Tail).
+% one of the constraints forces a single true value 
+% instead of comparing each of the row cells we simply require the whole arrays to be different
+apply_conflict_constraints(Matrix, [c(I, J) | RestConflicts], [ bool_arrays_neq(XI, XJ) | RestConstraints]-Tail) :-
+    matrixGetRow(Matrix, I, XI),
+    matrixGetRow(Matrix, J, XJ),
+    apply_conflict_constraints(Matrix, RestConflicts, RestConstraints-Tail).
 
-apply_M_constraints([], _, Tail-Tail).
-apply_M_constraints([Xi | RestExams], M, [int_leq(Xi, M) | RestConstraints]-Tail) :-
-    apply_M_constraints(RestExams, M, RestConstraints-Tail).
+
+apply_single_day_constraints([], Tail-Tail).
+apply_single_day_constraints([HeadRow | RestMatrixRows], [bool_array_sum_eq(HeadRow, 1) | RestConstraints]-Tail) :-
+    apply_single_day_constraints(RestMatrixRows, RestConstraints-Tail).
+
+
+apply_M_binding_constraints([], _, [], Tail-Tail).
+apply_M_binding_constraints([XI | RestExams], M, [ YI | RestExamDays], [ new_int(YI, 1, 10) | [int_leq(YI, M) | [int_direct2bool_array(YI, XI, 1) | RestConstraints]]]-Tail) :-
+    apply_M_binding_constraints(RestExams, M, RestExamDays, RestConstraints-Tail).
+
+
+%%%%%%%%%%%%%%%%%% LEGACY %%%%%%%%%%%%%%%%%%%%%%%%%%
+    % length(ExamsSchedule, NExams),
+    % populateExams(ExamsSchedule, 1, Constraints-Cs2),
+    % apply_conflict_constraints(ExamsSchedule, Conflicts, Cs2-Cs3),
+    % apply_M_constraints(ExamsSchedule, M, Cs3-[]).
+
+% populateExams([], _, Tail-Tail).
+% populateExams([Xi | RestExams], CurrentPossibleMax, [new_int(Xi, 1, CurrentPossibleMax) | RestConstraints]-Tail) :-
+%     NextPossibleMax is CurrentPossibleMax + 1,
+%     populateExams(RestExams, NextPossibleMax, RestConstraints-Tail).
+
+
+% apply_conflict_constraints(_, [], Tail-Tail).
+% apply_conflict_constraints(ExamsSchedule, [c(I, J) | RestConflicts], [ int_neq(XI, XJ) | RestConstraints]-Tail) :-
+%     nth1(I, ExamsSchedule, XI),
+%     nth1(J, ExamsSchedule, XJ),
+%     apply_conflict_constraints(ExamsSchedule, RestConflicts, RestConstraints-Tail).
+
+% apply_M_constraints([], _, Tail-Tail).
+% apply_M_constraints([Xi | RestExams], M, [int_leq(Xi, M) | RestConstraints]-Tail) :-
+%     apply_M_constraints(RestExams, M, RestConstraints-Tail).
 
 %%%%%%%%%%%%%%%%%% LEGACY %%%%%%%%%%%%%%%%%%%%%%%%%%
 % schedulingEncode(schedule(NExams, Conflicts), Map, M, [new_int(M, 1, MaxM), MaxMConstraint | Constraints]) :-
@@ -286,8 +318,18 @@ apply_M_constraints([Xi | RestExams], M, [int_leq(Xi, M) | RestConstraints]-Tail
 %%% Task 7 - schedulingDecode(Map+,Solution-)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-schedulingDecode(map(ExamsSchedule),Solution) :-
-    decodeIntArray(ExamsSchedule, Solution).
+schedulingDecode(map(ExamDays),Solution) :-
+    decodeDays(ExamDays, Solution).
+
+decodeDays([], []).
+decodeDays([H | T], [HS | TS]) :-
+    decodeInt(H, HS),
+    decodeDays(T, TS).
+
+%%%%%%%%%%%%%%%%%% LEGACY %%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% schedulingDecode(map(ExamsSchedule),Solution) :-
+%     decodeIntArray(ExamsSchedule, Solution).
 
 %%%%%%%%%%%%%%%%%% LEGACY %%%%%%%%%%%%%%%%%%%%%%%%%%
 
