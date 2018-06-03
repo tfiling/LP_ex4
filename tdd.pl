@@ -390,15 +390,15 @@ measure(FileName) :-
 
         % statistics(walltime, [TimeSinceStart | [TimeSinceLastCall]]),
 
-        measure('instances/sched-hec-s-92'),
-        measure('instances/sched-sta-f-83'),% works 1831 ms
-        measure('instances/sched-ute-s-92'),% works 794 ms
-        measure('instances/sched-lse-f-91'),
-        measure('instances/sched-yor-f-83'),
-        measure('instances/sched-ear-f-83'),
-        measure('instances/sched-kfu-s-93'),
-        measure('instances/sched-tre-s-92'),
-        measure('instances/sched-rye-s-93'),% out of global stack
+        % measure('instances/sched-hec-s-92'),
+        % measure('instances/sched-sta-f-83'),% works 1831 ms
+        % measure('instances/sched-ute-s-92'),% works 794 ms
+        % measure('instances/sched-lse-f-91'),
+        % measure('instances/sched-yor-f-83'),
+        % measure('instances/sched-ear-f-83'),
+        % measure('instances/sched-kfu-s-93'),
+        % measure('instances/sched-tre-s-92'),
+        % measure('instances/sched-rye-s-93'),% out of global stack
         measure('instances/sched-car-f-92'),% out of global stack
         measure('instances/sched-uta-s-92'),% out of global stack
         measure('instances/sched-car-s-91'),% out of global stack
