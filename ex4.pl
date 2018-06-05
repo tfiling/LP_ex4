@@ -394,3 +394,76 @@ schedulingSolve(Instance,Solution) :-
         ex4:schedulingEncode,
         ex4:schedulingDecode,
         ex4:schedulingVerify).
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Utility - findMaxClique(Instance+, Solution-)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% verify
+
+% Solution is a list of numbers which are the vertex indexes of the vertexes in the clique of size K
+cliqueVerify(clique(Matrix, K), Solution) :-
+    length(Solution, K),
+    findall((I, J), (between(1, K, I), I1 is I+1, between(I1, K, J)), AllIndexPairs),
+    verify_all_solution_vertexes_in_clique(AllIndexPairs, Matrix, Solution).
+
+
+verify_all_solution_vertexes_in_clique([], _, _)
+verify_all_solution_vertexes_in_clique([(I, J) | RestIndexPairs], Matrix, Solution) :-
+    nth1(I, List, X),
+    nth1(J, List, Y),
+    matrixGetCell(Matrix, X, Y, 1),
+    verify_all_solution_vertexes_in_clique(RestIndexPairs, Matrix, Solution).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% encode
+cliqueEncode(clique(Matrix, K), map(VertexList), K, [new_int(K, 1, N) | Constraints]) :-
+    length(Matrix, N),
+    length(VertexList, N),
+    NMinus1 is N - 1,
+    Constraints = [bool_array_sum_eq(VertexList, K) | Cs],
+    findall((I, J), (between(1, N, I), I1 is I+1, between(I1, NExams, J)), AllIndexPairs),
+    setCliqueConstraints(AllIndexPairs, VertexList, Matrix, Cs-[]).
+
+
+% VertexList is a list of booleans where True in cell i means that vertex i is part of the clique
+setCliqueConstraints([], _, _, Tail-Tail).
+setCliqueConstraints([(I, J) | RestPairs], VertexList, Matrix, [bool_array_or([-X, -Y, Z]) | RestRowConstraints]-Tail) :-
+    nth1(I, VertexList, X),
+    nth1(J, VertexList, Y),
+    matrixGetCell(Matrix, I, J, Z),
+    setCliqueConstraints(RestPairs, VertexList, Matrix, RestRowConstraints-Tail).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% decode
+
+cliqueDecode(map(VertexList), Solution) :-
+    accumulateCliqueVertexList(VertexList, 1, Solution).
+
+accumulateCliqueVertexList([], _, []).
+accumulateCliqueVertexList([1 | RestVertexes], CurrentVertexID, [CurrentVertexID | RestSolution]) :-
+    NextVertexID is CurrentVertexID + 1,
+    accumulateCliqueVertexList(RestVertexes, NextVertexID, RestSolution).
+
+accumulateCliqueVertexList([-1 | RestVertexes], CurrentVertexID, RestSolution) :-
+    NextVertexID is CurrentVertexID + 1,
+    accumulateCliqueVertexList(RestVertexes, NextVertexID, RestSolution).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% runExprMax - find max clique
+
+findMaxClique(Instance,Solution) :-
+    runExprMax(Instance,Solution,
+        ex4:cliqueEncode,
+        ex4:cliqueDecode,
+        ex4:cliqueVerify).
