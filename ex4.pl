@@ -169,12 +169,13 @@ validate_solution_conflicts(Solution, [c(I, J) | RestConflicts]) :-
 %%% Task 6 - schedulingEncode(Instance+,Map+,Constraints-)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  
-schedulingEncode(schedule(NExams, Conflicts), map(ExamDays), M, [new_int(M, 1, NExams) | Constraints]) :-
+schedulingEncode(schedule(NExams, Conflicts), map(ExamDays), M, [new_int(M, CliqueSize, NExams) | Constraints]) :-
     createAsymmetricMatrix(1, NExams, Matrix),
+    length(ExamDays, NExams),
+    optimize_with_greatest_clique(ExamDays, Conflicts, CliqueSize),
     set_matrix_contents(Matrix, Constraints-Cs2),
     apply_M_binding_constraints(Matrix, M, 1, ExamDays, Cs2-Cs3),
-    apply_conflict_constraints(ExamDays, Conflicts, Cs3-Cs4),
-    optimize_with_greatest_clique(ExamDays, Conflicts, Cs4-[]).% TODO avoid duplicate constraints - generate the clique prior the matrix creation, prevent un-needed YIs BEE variables creation and instead set the values directly to the map
+    apply_conflict_constraints(ExamDays, Conflicts, Cs3-[]).
 
 
 createAsymmetricMatrix(NExams1, NExams, []) :-
@@ -208,23 +209,31 @@ apply_single_day_constraints([HeadRow | RestMatrixRows], [bool_array_sum_eq(Head
 
 apply_M_binding_constraints([], _, _, [], Tail-Tail).
 apply_M_binding_constraints([XI | RestExams], M, CurrentPossibleMax, [ YI | RestExamDays], [ new_int(YI, 1, CurrentPossibleMax) | [int_leq(YI, M) | [int_direct2bool_array(YI, XI, 1) | RestConstraints]]]-Tail) :-
+    var(YI),
     CurrentPossibleMax1 is CurrentPossibleMax + 1,
     apply_M_binding_constraints(RestExams, M, CurrentPossibleMax1, RestExamDays, RestConstraints-Tail).
 
 
-optimize_with_greatest_clique(ExamDays, Conflicts, Cs-Tail) :-
+apply_M_binding_constraints([XI | RestExams], M, CurrentPossibleMax, [ YI | RestExamDays], [int_leq(YI, M) | [int_direct2bool_array(YI, XI, 1) | RestConstraints]]-Tail) :-
+    \+var(YI),
+    CurrentPossibleMax1 is CurrentPossibleMax + 1,
+    apply_M_binding_constraints(RestExams, M, CurrentPossibleMax1, RestExamDays, RestConstraints-Tail).
+
+
+optimize_with_greatest_clique(ExamDays, Conflicts, CliqueSize) :-
     length(ExamDays, N),
     matrixCreate(N, N, Matrix),
     set_conflict_edges(Matrix, Conflicts),
     zero_matrix(Matrix),
     findMaxClique(Matrix, MaxCliqueVertexList),
-    set_clique_exam_days(ExamDays, MaxCliqueVertexList, 1, Cs-Tail).
+    length(MaxCliqueVertexList, CliqueSize),
+    set_clique_exam_days(ExamDays, MaxCliqueVertexList, 1).
 
-set_clique_exam_days(_, [], _, Tail-Tail).
-set_clique_exam_days(ExamDays, [CurrentCliqueVertex | RestVertices], CurrentAvailableDay, [int_eq(YI, CurrentAvailableDay) | Cs]-Tail) :-
+set_clique_exam_days(_, [], _).
+set_clique_exam_days(ExamDays, [CurrentCliqueVertex | RestVertices], CurrentAvailableDay) :-
     NextAvailableDay is CurrentAvailableDay + 1,
-    nth1(CurrentCliqueVertex, ExamDays, YI),
-    set_clique_exam_days(ExamDays, RestVertices, NextAvailableDay, Cs-Tail).
+    nth1(CurrentCliqueVertex, ExamDays, CurrentAvailableDay),
+    set_clique_exam_days(ExamDays, RestVertices, NextAvailableDay).
 
 set_conflict_edges(_, []).
 set_conflict_edges(Matrix, [c(I, J) | RestConflicts]) :-
