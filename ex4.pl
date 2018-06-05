@@ -1,4 +1,4 @@
-:- module('ex4', [ kakuroSolve/2, schedulingSolve/2]).
+:- module('ex4', [ kakuroSolve/2, schedulingSolve/2, findMaxClique/2]).
 :- use_module('./bee/bApplications/auxs/auxRunExpr',[runExpr/5, runExprMax/5, runExprMin/5, decodeInt/2, decodeIntArray/2]).
 :- use_module('./bee/bApplications/auxs/auxMatrix',[matrixCreate/3, matrixGetCell/4, matrixGetRow/3, matrixTranspose/2]).
 
@@ -173,8 +173,8 @@ schedulingEncode(schedule(NExams, Conflicts), map(ExamDays), M, [new_int(M, 1, N
     createAsymmetricMatrix(1, NExams, Matrix),
     set_matrix_contents(Matrix, Constraints-Cs2),
     apply_M_binding_constraints(Matrix, M, 1, ExamDays, Cs2-Cs3),
-    apply_conflict_constraints(ExamDays, Conflicts, Cs3-[]).
-    % apply_single_day_constraints(Matrix, Cs4-[]).
+    apply_conflict_constraints(ExamDays, Conflicts, Cs3-Cs4),
+    optimize_with_greatest_clique(ExamDays, Conflicts, Cs4-[]).% TODO avoid duplicate constraints - generate the clique prior the matrix creation, prevent un-needed YIs BEE variables creation and instead set the values directly to the map
 
 
 createAsymmetricMatrix(NExams1, NExams, []) :-
@@ -210,6 +210,36 @@ apply_M_binding_constraints([], _, _, [], Tail-Tail).
 apply_M_binding_constraints([XI | RestExams], M, CurrentPossibleMax, [ YI | RestExamDays], [ new_int(YI, 1, CurrentPossibleMax) | [int_leq(YI, M) | [int_direct2bool_array(YI, XI, 1) | RestConstraints]]]-Tail) :-
     CurrentPossibleMax1 is CurrentPossibleMax + 1,
     apply_M_binding_constraints(RestExams, M, CurrentPossibleMax1, RestExamDays, RestConstraints-Tail).
+
+
+optimize_with_greatest_clique(ExamDays, Conflicts, Cs-Tail) :-
+    length(ExamDays, N),
+    matrixCreate(N, N, Matrix),
+    set_conflict_edges(Matrix, Conflicts),
+    zero_matrix(Matrix),
+    findMaxClique(Matrix, MaxCliqueVertexList),
+    set_clique_exam_days(ExamDays, MaxCliqueVertexList, 1, Cs-Tail).
+
+set_clique_exam_days(_, [], _, Tail-Tail).
+set_clique_exam_days(ExamDays, [CurrentCliqueVertex | RestVertices], CurrentAvailableDay, [int_eq(YI, CurrentAvailableDay) | Cs]-Tail) :-
+    NextAvailableDay is CurrentAvailableDay + 1,
+    nth1(CurrentCliqueVertex, ExamDays, YI),
+    set_clique_exam_days(ExamDays, RestVertices, NextAvailableDay, Cs-Tail).
+
+set_conflict_edges(_, []).
+set_conflict_edges(Matrix, [c(I, J) | RestConflicts]) :-
+    matrixGetCell(Matrix, I, J, 1),
+    matrixGetCell(Matrix, J, I, 1),
+    set_conflict_edges(Matrix, RestConflicts).
+
+zero_matrix([]).
+zero_matrix([[] | RestRows]) :-
+    zero_matrix(RestRows).
+zero_matrix([[-1 | T] | RestRows]) :-
+    zero_matrix([T | RestRows]).
+zero_matrix([[H | T] | RestRows]) :-
+    H == 1, % the edge was set
+    zero_matrix([T | RestRows]).
 
 
 %%%%%%%%%%%%%%%%%% LEGACY %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -404,19 +434,19 @@ schedulingSolve(Instance,Solution) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Utility - findMaxClique(Instance+, Solution-)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+% Solution is a list of vertex ID that belong to the max clique
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% verify
 
 % Solution is a list of numbers which are the vertex indexes of the vertexes in the clique of size K
-cliqueVerify(clique(Matrix, K), Solution) :-
+cliqueVerify(Matrix, Solution) :-
     length(Solution, K),
     findall((I, J), (between(1, K, I), I1 is I+1, between(I1, K, J)), AllIndexPairs),
     verify_all_solution_vertexes_in_clique(AllIndexPairs, Matrix, Solution).
 
 
-verify_all_solution_vertexes_in_clique([], _, _)
+verify_all_solution_vertexes_in_clique([], _, _).
 verify_all_solution_vertexes_in_clique([(I, J) | RestIndexPairs], Matrix, Solution) :-
     nth1(I, List, X),
     nth1(J, List, Y),
@@ -426,12 +456,12 @@ verify_all_solution_vertexes_in_clique([(I, J) | RestIndexPairs], Matrix, Soluti
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% encode
-cliqueEncode(clique(Matrix, K), map(VertexList), K, [new_int(K, 1, N) | Constraints]) :-
+cliqueEncode(Matrix, map(VertexList), K, [new_int(K, 1, N) | Constraints]) :-
     length(Matrix, N),
     length(VertexList, N),
     NMinus1 is N - 1,
     Constraints = [bool_array_sum_eq(VertexList, K) | Cs],
-    findall((I, J), (between(1, N, I), I1 is I+1, between(I1, NExams, J)), AllIndexPairs),
+    findall((I, J), (between(1, NMinus1, I), I1 is I+1, between(I1, N, J)), AllIndexPairs),% TODO the N-1 might should be used in the other findalls
     setCliqueConstraints(AllIndexPairs, VertexList, Matrix, Cs-[]).
 
 
