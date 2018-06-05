@@ -250,120 +250,6 @@ zero_matrix([[H | T] | RestRows]) :-
     H == 1, % the edge was set
     zero_matrix([T | RestRows]).
 
-
-%%%%%%%%%%%%%%%%%% LEGACY %%%%%%%%%%%%%%%%%%%%%%%%%%
-    % length(ExamsSchedule, NExams),
-    % populateExams(ExamsSchedule, 1, Constraints-Cs2),
-    % apply_conflict_constraints(ExamsSchedule, Conflicts, Cs2-Cs3),
-    % apply_M_constraints(ExamsSchedule, M, Cs3-[]).
-
-% populateExams([], _, Tail-Tail).
-% populateExams([Xi | RestExams], CurrentPossibleMax, [new_int(Xi, 1, CurrentPossibleMax) | RestConstraints]-Tail) :-
-%     NextPossibleMax is CurrentPossibleMax + 1,
-%     populateExams(RestExams, NextPossibleMax, RestConstraints-Tail).
-
-
-% apply_conflict_constraints(_, [], Tail-Tail).
-% apply_conflict_constraints(ExamsSchedule, [c(I, J) | RestConflicts], [ int_neq(XI, XJ) | RestConstraints]-Tail) :-
-%     nth1(I, ExamsSchedule, XI),
-%     nth1(J, ExamsSchedule, XJ),
-%     apply_conflict_constraints(ExamsSchedule, RestConflicts, RestConstraints-Tail).
-
-% apply_M_constraints([], _, Tail-Tail).
-% apply_M_constraints([Xi | RestExams], M, [int_leq(Xi, M) | RestConstraints]-Tail) :-
-%     apply_M_constraints(RestExams, M, RestConstraints-Tail).
-
-%%%%%%%%%%%%%%%%%% LEGACY %%%%%%%%%%%%%%%%%%%%%%%%%%
-% schedulingEncode(schedule(NExams, Conflicts), Map, M, [new_int(M, 1, MaxM), MaxMConstraint | Constraints]) :-
-%     calc_MaxM(NExams, MaxM),
-%     matrixCreate(NExams, NExams, Matrix),
-%     set_MaxM_constraint(Matrix, M, MaxMConstraint),
-%     writeln(MaxMConstraint),
-%     matrixTranspose(Matrix, Matrix),
-%     set_matrix_contents(Matrix, Constraints-Cs2),
-%     Map = map(Matrix),
-%     apply_zero_diagonal_constraints(Matrix, 1, NExams),
-%     apply_conflict_constraints(Matrix, Conflicts, Cs2-Cs3),
-%     apply_clique_only_edges_constraints(Matrix, NExams, 1, Cs3-[]).
-
-% % MaxM = (NExams^2 - NExams) / 2
-% calc_MaxM(NExams, MaxM) :-
-%     NExams2 is NExams * NExams,
-%     NExams2_SubNExams is NExams2 - NExams,
-%     MaxM is NExams2_SubNExams / 2.
-
-% set_MaxM_constraint(Matrix, M, bool_array_sum_eq(Vector, M)) :-
-%     extract_top_right_side(Matrix, 1, PartialMatrixVector),
-%     append(PartialMatrixVector, Vector).
-
-
-% extract_top_right_side(Matrix, CurrentRowIndex, []) :-
-%     length(Matrix, Len),
-%     CurrentRowIndex > Len.
-
-% extract_top_right_side(Matrix, CurrentRowIndex, [CurrentExtracted | RestExtracted]) :-
-%     length(Matrix, Len),
-%     CurrentRowIndex =< Len,
-%     matrixGetRow(Matrix, CurrentRowIndex, Row),
-%     CurrentRowIndex1 is CurrentRowIndex + 1,
-%     length(Head, CurrentRowIndex),
-%     append(Head, CurrentExtracted, Row),
-%     extract_top_right_side(Matrix, CurrentRowIndex1, RestExtracted).
-
-% set_matrix_contents([], Tail-Tail).
-% set_matrix_contents([[] | RestRows], Cs-Tail) :-
-%     set_matrix_contents(RestRows, Cs-Tail).
-% set_matrix_contents([[H | T] | RestRows], [new_bool(H) | Cs] - Tail) :-
-%     set_matrix_contents([T | RestRows], Cs-Tail).
-
-% apply_zero_diagonal_constraints(_, CurrentIndex, N) :-
-%     CurrentIndex > N.
-
-% apply_zero_diagonal_constraints(Matrix, CurrentIndex, N) :-
-%     CurrentIndex =< N,
-%     matrixGetCell(Matrix, CurrentIndex, CurrentIndex, -1),
-%     I1 is CurrentIndex + 1,
-%     apply_zero_diagonal_constraints(Matrix, I1, N).
-
-% apply_symmetry_constraints(Matrix, NExams, Constraints-Tail) :-
-%     findall((I, J), (between(1, NExams, I), I1 is I+1, between(I1, NExams, J)), AllIndexPairs),
-%     apply_symmetry_constraints(Matrix, NExams, AllIndexPairs, Constraints-Tail).
-
-
-% apply_symmetry_constraints(_, _, [], Tail-Tail).
-% apply_symmetry_constraints(Matrix, _, [(I, J) | RestIndexPairs], [ bool_eq(XIJ, XJI) | RestConstraints]-Tail) :-
-%     matrixGetCell(Matrix, I, J, XIJ),
-%     matrixGetCell(Matrix, J, I, XJI),
-%     apply_symmetry_constraints(Matrix, _, RestIndexPairs, RestConstraints-Tail).
-
-
-% apply_conflict_constraints(_, [], Tail-Tail).
-% apply_conflict_constraints(Matrix, [c(I, J) | RestConflicts], [ bool_or_reif(XIJ, XJI, -1) | RestConstraints]-Tail) :-
-%     matrixGetCell(Matrix, I, J, XIJ),
-%     matrixGetCell(Matrix, J, I, XJI),
-%     apply_conflict_constraints(Matrix, RestConflicts, RestConstraints-Tail).
-
-
-% apply_clique_only_edges_constraints(_, NExams, CurrentRowIndex, Tail-Tail) :-
-%     CurrentRowIndex > NExams.
-
-% apply_clique_only_edges_constraints(Matrix, NExams, CurrentRowIndex, Constraints-Tail) :-
-%     CurrentRowIndex =< NExams,
-%     matrixGetRow(Matrix,CurrentRowIndex, Row),
-%     findall((I, J), (between(1, NExams, I), I1 is I+1, between(I1, NExams, J)), Pairs),
-%     row_apply_clique_only_edges_constraints(Pairs, Row, Matrix, Constraints-Cs2),
-%     NextRowIndex is CurrentRowIndex + 1,
-%     apply_clique_only_edges_constraints(Matrix, NExams, NextRowIndex, Cs2-Tail).
-
-
-% row_apply_clique_only_edges_constraints([], _, _, Tail-Tail).
-% row_apply_clique_only_edges_constraints([(I, J) | RestPairs], Row, Matrix, [bool_array_or([-X, -Y, Z]) | RestRowConstraints]-Tail) :-
-%     nth1(I, Row, X),
-%     nth1(J, Row, Y),
-%     matrixGetCell(Matrix, I, J, Z),
-%     row_apply_clique_only_edges_constraints(RestPairs, Row, Matrix, RestRowConstraints-Tail).
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Task 7 - schedulingDecode(Map+,Solution-)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -376,53 +262,6 @@ decodeDays([H | T], [HS | TS]) :-
     decodeInt(H, HS),
     decodeDays(T, TS).
 
-%%%%%%%%%%%%%%%%%% LEGACY %%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% schedulingDecode(map(ExamsSchedule),Solution) :-
-%     decodeIntArray(ExamsSchedule, Solution).
-
-%%%%%%%%%%%%%%%%%% LEGACY %%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% schedulingDecode(map(Matrix),Solution) :-
-%     length(Matrix, NExams),
-%     length(Solution, NExams),
-%     numlist(1, NExams, AllIndexes),
-%     extract_distribution(Matrix, AllIndexes, ExamDistribution),
-%     populate_solution(ExamDistribution, 1, Solution).
-
-
-% extract_distribution(_, [], []).
-% extract_distribution(Matrix, [CurrentIndex | RestIndexes], [ [CurrentIndex | AdjacentExamsIndexes] | RestExamDistribution]) :-
-%     matrixGetRow(Matrix, CurrentIndex, Row),
-%     extract_adjacent_exams(Matrix, Row, AdjacentExamsIndexes),
-%     delete_all(RestIndexes, AdjacentExamsIndexes, RemainingIndexes),
-%     extract_distribution(Matrix, RemainingIndexes, RestExamDistribution).
-
-% extract_adjacent_exams(_, Row, []) :-
-%     \+member(1, Row).
-% extract_adjacent_exams(Matrix, Row, [ExamIndex | RestAdjacentExamsIndexes]) :-
-%     nth1(ExamIndex, Row, 1),
-%     select(1, Row, -1, NewRow),
-%     extract_adjacent_exams(Matrix, NewRow, RestAdjacentExamsIndexes).
-
-
-% delete_all(RemainingList, [], RemainingList).
-% delete_all(List, [H | T], RemainingList) :-
-%     delete(List, H, CurrentRemainingList),
-%     delete_all(CurrentRemainingList, T, RemainingList).
-
-% populate_solution([], _, _).
-% populate_solution([DayDistribution | RestDistribution], CurrentDayPopulated, Solution) :-
-%     populate_day(DayDistribution, CurrentDayPopulated, Solution),
-%     NextDay is CurrentDayPopulated + 1,
-%     populate_solution(RestDistribution, NextDay, Solution).
-
-% populate_day([], _, _).
-% populate_day([ExamIndex | RestExams], CurrentDayPopulated, Solution) :-
-%     nth1(ExamIndex, Solution, CurrentDayPopulated),
-%     populate_day(RestExams, CurrentDayPopulated, Solution).
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Task 8 - schedulingSolve(Instance+,Solution-)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -433,11 +272,6 @@ schedulingSolve(Instance,Solution) :-
         ex4:schedulingEncode,
         ex4:schedulingDecode,
         ex4:schedulingVerify).
-
-
-
-
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
