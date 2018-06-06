@@ -1,6 +1,6 @@
-:- module('ex4', [ kakuroSolve/2, schedulingSolve/2]).
+:- module('ex4', [ kakuroSolve/2, schedulingSolve/2, findMaxClique/2]).
 :- use_module('./bee/bApplications/auxs/auxRunExpr',[runExpr/5, runExprMax/5, runExprMin/5, decodeInt/2, decodeIntArray/2]).
-:- use_module('./bee/bApplications/auxs/auxMatrix',[matrixCreate/3, matrixGetCell/4, matrixGetRow/3, matrixTranspose/2]).
+:- use_module('./bee/bApplications/auxs/auxMatrix',[matrixCreate/3, matrixGetCell/4]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Task 1 - kakuroVerify(Instance+, Solution+)
@@ -155,7 +155,6 @@ schedulingVerify(schedule(NExams, Conflicts), Solution) :-
     length(Solution, NExams),
     validate_solution_conflicts(Solution, Conflicts).
 
-
 validate_solution_conflicts(_, []).
 validate_solution_conflicts(Solution, [c(I, J) | RestConflicts]) :-
     nth1(I, Solution, TI),
@@ -169,6 +168,8 @@ validate_solution_conflicts(Solution, [c(I, J) | RestConflicts]) :-
 %%% Task 6 - schedulingEncode(Instance+,Map+,Constraints-)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  
+% M is the variable used for comparing solutions. 
+% M's minimal possible value is the size of the largest exam group where every 2 members conflict with each other(see optimize_with_greatest_clique notes for more details)
 schedulingEncode(schedule(NExams, Conflicts), map(ExamsSchedule), M, [new_int(M, CliqueSize, NExams) | Constraints]) :-
     length(ExamsSchedule, NExams),
     optimize_with_greatest_clique(ExamsSchedule, Conflicts, CliqueSize),
@@ -176,48 +177,37 @@ schedulingEncode(schedule(NExams, Conflicts), map(ExamsSchedule), M, [new_int(M,
     apply_conflict_constraints(ExamsSchedule, Conflicts, Cs2-Cs3),
     apply_M_constraints(ExamsSchedule, M, Cs3-[]).
 
-populateExams([], _, Tail-Tail).
-populateExams([Xi | RestExams], NExams, [new_int(Xi, 1, NExams) | RestConstraints]-Tail) :-
-    var(Xi),
-    populateExams(RestExams, NExams, RestConstraints-Tail).
-
-populateExams([Xi | RestExams], NExams, Constraints-Tail) :-
-    \+var(Xi),
-    populateExams(RestExams, NExams, Constraints-Tail).
-
-
-apply_conflict_constraints(_, [], Tail-Tail).
-apply_conflict_constraints(ExamsSchedule, [c(I, J) | RestConflicts], [ int_neq(XI, XJ) | RestConstraints]-Tail) :-
-    nth1(I, ExamsSchedule, XI),
-    nth1(J, ExamsSchedule, XJ),
-    apply_conflict_constraints(ExamsSchedule, RestConflicts, RestConstraints-Tail).
-
-apply_M_constraints([], _, Tail-Tail).
-apply_M_constraints([Xi | RestExams], M, [int_leq(Xi, M) | RestConstraints]-Tail) :-
-    apply_M_constraints(RestExams, M, RestConstraints-Tail).
-
-
+% optimize_with_greatest_clique(ExamsSchedule+, Conflicts+, CliqueSize-)
+% finds the greatest clique of exams that conflict with each other. in this group of exams every pair of exams has a conflict.
+% the predicate return the size of the clique - CliqueSize and sets a different day for each exam in the clique within ExamsSchedule variable
+% the assigned days are between 1 and CliqueSize
 optimize_with_greatest_clique(ExamsSchedule, Conflicts, CliqueSize) :-
     length(ExamsSchedule, N),
     matrixCreate(N, N, Matrix),
-    set_conflict_edges(Matrix, Conflicts),
-    zero_matrix(Matrix),
-    findMaxClique(Matrix, MaxCliqueVertexList),
+    set_conflict_edges(Matrix, Conflicts),% represents the conflicts as a matrix where every vertex is an exam and every conflict is an edge
+    zero_matrix(Matrix),% set -1 where there are no edges
+    findMaxClique(Matrix, MaxCliqueVertexList),% invokes a BEE based predicate that finds the greatest clique in the graph
     length(MaxCliqueVertexList, CliqueSize),
-    set_clique_exam_days(ExamsSchedule, MaxCliqueVertexList, 1).
+    set_clique_exam_days(ExamsSchedule, MaxCliqueVertexList, 1).% assign different exam date for the members of the greatest clique
 
+% set_clique_exam_days(ExamDays+, CliqueVertexList+, CurrentAvailableDay+)
+% assign different exam date for the members of the greatest clique
 set_clique_exam_days(_, [], _).
 set_clique_exam_days(ExamDays, [CurrentCliqueVertex | RestVertices], CurrentAvailableDay) :-
     NextAvailableDay is CurrentAvailableDay + 1,
     nth1(CurrentCliqueVertex, ExamDays, CurrentAvailableDay),
     set_clique_exam_days(ExamDays, RestVertices, NextAvailableDay).
 
+% set_conflict_edges(Matrix+, Conflicts+)
+% set 1, representing an edge in the adjacency matrix, representing the conflicts graph
+% for each conflict c(i, j) Matrix[i, j] will be 1
 set_conflict_edges(_, []).
 set_conflict_edges(Matrix, [c(I, J) | RestConflicts]) :-
     matrixGetCell(Matrix, I, J, 1),
     matrixGetCell(Matrix, J, I, 1),
     set_conflict_edges(Matrix, RestConflicts).
 
+% zero_matrix(Matrix) - sets -1 in the adjacency matrix where an edge was not set
 zero_matrix([]).
 zero_matrix([[] | RestRows]) :-
     zero_matrix(RestRows).
@@ -228,6 +218,31 @@ zero_matrix([[H | T] | RestRows]) :-
     zero_matrix([T | RestRows]).
 
 
+% populateExams(ExamsSchedule+, NExams+, Constraints-Tail-)
+% for each exam i which its day is still unknown creates a BEE int which will be resolved by the BEE's solver to be the exam's i day
+populateExams([], _, Tail-Tail).
+populateExams([Xi | RestExams], NExams, [new_int(Xi, 1, NExams) | RestConstraints]-Tail) :-
+    var(Xi),
+    populateExams(RestExams, NExams, RestConstraints-Tail).
+
+populateExams([Xi | RestExams], NExams, Constraints-Tail) :-
+    \+var(Xi),
+    populateExams(RestExams, NExams, Constraints-Tail).
+
+% apply_conflict_constraints(ExamsSchedule+, Conflicts+, Constraints-).
+% adds constraints that will force the conflicts
+apply_conflict_constraints(_, [], Tail-Tail).
+apply_conflict_constraints(ExamsSchedule, [c(I, J) | RestConflicts], [ int_neq(XI, XJ) | RestConstraints]-Tail) :-
+    nth1(I, ExamsSchedule, XI),
+    nth1(J, ExamsSchedule, XJ),
+    apply_conflict_constraints(ExamsSchedule, RestConflicts, RestConstraints-Tail).
+
+% apply_M_constraints(ExamsSchedule+, M, Constraints-)
+% this predicate adds constraints that bind the resulted exam days with M - representing how many days were used for distributing the exams
+% M is the variable that is used for comparing solutions, the smaller M the better the solution
+apply_M_constraints([], _, Tail-Tail).
+apply_M_constraints([Xi | RestExams], M, [int_leq(Xi, M) | RestConstraints]-Tail) :-
+    apply_M_constraints(RestExams, M, RestConstraints-Tail).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -251,7 +266,7 @@ schedulingSolve(Instance,Solution) :-
         max_list(Solution, Max),
         write('Distributed exams in '),
         write(Max),
-        write(' days').
+        writeln(' days').
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
