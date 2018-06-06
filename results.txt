@@ -1,0 +1,129 @@
+problem #1
+instances/sched-hec-s-92
+
+   0.02938,    9474,   600,   0.02195,sat(17)
+   0.14289,   68289,  4721,   0.11171,sat(17)
+Distributed exams in 17 days
+Execution took 366 ms.
+
+ exit code: 0
+
+-------------------------------------------
+
+problem #2
+instances/sched-sta-f-83
+
+   0.14646,   29517,  1133,   0.05333,sat(13)
+   0.34793,  161241, 17141,   0.18188,sat(13)
+Distributed exams in 13 days
+Execution took 883 ms.
+
+ exit code: 0
+
+-------------------------------------------
+
+problem #3
+instances/sched-ute-s-92
+
+   0.25501,   52058,  1583,   0.13765,sat(10)
+   0.73020,  302373, 31938,   0.31843,sat(10)
+Distributed exams in 10 days
+Execution took 1747 ms.
+
+ exit code: 0
+
+-------------------------------------------
+
+problem #4
+instances/sched-lse-f-91
+
+   1.32618,  219612,  3678,   0.67668,sat(17)
+   3.08992, 1526841,137602,   2.30915,sat(17)
+Distributed exams in 17 days
+Execution took 9675 ms.
+
+ exit code: 0
+
+-------------------------------------------
+
+problem #5
+instances/sched-ear-f-83
+
+   0.33696,   52166,  1643,   0.48061,sat(21)
+   1.82131,  613303, 30504,   0.75609,sat(22)
+Distributed exams in 22 days
+Execution took 3954 ms.
+
+ exit code: 0
+
+-------------------------------------------
+
+problem #6
+instances/sched-kfu-s-93
+
+   2.08285,  320850,  4558,   1.46466,sat(19)
+   5.90907, 2492711,202605,   2.68693,sat(19)
+Distributed exams in 19 days
+Execution took 15595 ms.
+
+ exit code: 0
+
+-------------------------------------------
+
+problem #7
+instances/sched-tre-s-92
+
+   0.49347,  100112,  2358,   0.51233,sat(20)
+   3.37856, 1345884, 61691,   1.64304,sat(20)
+Distributed exams in 20 days
+Execution took 6903 ms.
+
+ exit code: 0
+
+-------------------------------------------
+
+problem #8
+instances/sched-rye-s-93
+
+   1.97881,  353871,  4833,   1.57364,sat(21)
+   8.71737, 3939025,224556,   4.68595,sat(21)
+Distributed exams in 21 days
+Execution took 20818 ms.
+
+ exit code: 0
+
+-------------------------------------------
+
+problem #9
+instances/sched-car-f-92
+
+   2.43040,  431591,  5491,  34.44373,sat(24)
+  19.92702, 8767509,277019,  33.88425,sat(27)
+Distributed exams in 27 days
+Execution took 97128 ms.
+
+ exit code: 0
+
+-------------------------------------------
+
+problem #10
+instances/sched-uta-s-92
+
+   2.75566,  567398,  6439,  11.52547,sat(26)
+  35.96828,12768381,366288,  14.46020,sat(29)
+Distributed exams in 29 days
+Execution took 73779 ms.
+
+ exit code: 0
+
+-------------------------------------------
+
+problem #11
+instances/sched-car-s-91
+
+   3.76497,  680483,  7159, 112.02213,sat(23)
+  41.63776,17854059,444842,
+ exit code: 124(timedout after more than 100 minutes)
+
+-------------------------------------------
+
