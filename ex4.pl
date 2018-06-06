@@ -249,6 +249,8 @@ apply_M_constraints([Xi | RestExams], M, [int_leq(Xi, M) | RestConstraints]-Tail
 %%% Task 7 - schedulingDecode(Map+,Solution-)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% the map contains the list of days where the ith element is the day the ith exam should take place
+% all we need is to decode that list in to the solution
 schedulingDecode(map(ExamsSchedule),Solution) :-
     decodeIntArray(ExamsSchedule, Solution).
 
@@ -257,7 +259,7 @@ schedulingDecode(map(ExamsSchedule),Solution) :-
 %%% Task 8 - schedulingSolve(Instance+,Solution-)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
+% for comfort will print the amount of days the solution need to distribute the exams while holding the conflicts
 schedulingSolve(Instance,Solution) :-
     runExprMin(Instance,Solution,
         ex4:schedulingEncode,
@@ -272,38 +274,46 @@ schedulingSolve(Instance,Solution) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Utility - findMaxClique(Instance+, Solution-)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% this utility, BEE based, predicate gets an adjacency matrix representing a graph and find the greatest clique in that graph
 % Solution is a list of vertex ID that belong to the max clique
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% verify
 
 % Solution is a list of numbers which are the vertex indexes of the vertexes in the clique of size K
+% the instance is an adjacency matrix representing the graph
 cliqueVerify(Matrix, Solution) :-
-    length(Solution, K),
-    findall((I, J), (between(1, K, I), I1 is I+1, between(I1, K, J)), AllIndexPairs),
-    verify_all_solution_vertexes_in_clique(AllIndexPairs, Matrix, Solution).
+    length(Solution, N),
+    NMinus1 is N - 1,
+    findall((I, J), (between(1, NMinus1, I), I1 is I+1, between(I1, N, J)), AllIndexPairs),% create all possible pairs from the clique vertex list
+    verify_all_solution_vertexes_in_clique(AllIndexPairs, Matrix).% make sure there is an edge between any pair of vertices in the clique
 
-
-verify_all_solution_vertexes_in_clique([], _, _).
-verify_all_solution_vertexes_in_clique([(I, J) | RestIndexPairs], Matrix, Solution) :-
+% verify_all_solution_vertexes_in_clique(IndexPairs+, Matrix+)
+verify_all_solution_vertexes_in_clique([], _).
+verify_all_solution_vertexes_in_clique([(I, J) | RestIndexPairs], Matrix) :-
     nth1(I, List, X),
     nth1(J, List, Y),
-    matrixGetCell(Matrix, X, Y, 1),
-    verify_all_solution_vertexes_in_clique(RestIndexPairs, Matrix, Solution).
+    matrixGetCell(Matrix, X, Y, 1),% there must be an edge, represented by 1, between the current pair of vertices from the clique
+    verify_all_solution_vertexes_in_clique(RestIndexPairs, Matrix).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% encode
+
+% the general idea of the encoding is that the map holds an array of boolean variables. 
+% true value in the ith cell indicates that the ith vertex is part of the clique
 cliqueEncode(Matrix, map(VertexList), K, [new_int(K, 1, N) | Constraints]) :-
     length(Matrix, N),
     length(VertexList, N),
     NMinus1 is N - 1,
     Constraints = [bool_array_sum_eq(VertexList, K) | Cs],
-    findall((I, J), (between(1, NMinus1, I), I1 is I+1, between(I1, N, J)), AllIndexPairs),% TODO the N-1 might should be used in the other findalls
+    findall((I, J), (between(1, NMinus1, I), I1 is I+1, between(I1, N, J)), AllIndexPairs),% generate all possible index pairs
     setCliqueConstraints(AllIndexPairs, VertexList, Matrix, Cs-[]).
 
 
 % VertexList is a list of booleans where True in cell i means that vertex i is part of the clique
+% the constraint is that if X and Y are in the clique then they must have an edge between them:
+% X AND Y => Matrix[X, Y] = 1 <==> !X OR !Y OR Matrix[X, Y]
 setCliqueConstraints([], _, _, Tail-Tail).
 setCliqueConstraints([(I, J) | RestPairs], VertexList, Matrix, [bool_array_or([-X, -Y, Z]) | RestRowConstraints]-Tail) :-
     nth1(I, VertexList, X),
@@ -313,7 +323,7 @@ setCliqueConstraints([(I, J) | RestPairs], VertexList, Matrix, [bool_array_or([-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% decode
-
+% converts the boolean list into an integer list holding the IDs of the vertices belonged to the clique
 cliqueDecode(map(VertexList), Solution) :-
     accumulateCliqueVertexList(VertexList, 1, Solution).
 
