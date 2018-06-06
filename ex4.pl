@@ -271,7 +271,11 @@ schedulingSolve(Instance,Solution) :-
     runExprMin(Instance,Solution,
         ex4:schedulingEncode,
         ex4:schedulingDecode,
-        ex4:schedulingVerify).
+        ex4:schedulingVerify),
+        max_list(Solution, Max),
+        write('Distributed exams in '),
+        write(Max),
+        write(' days').
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
